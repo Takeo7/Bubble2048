@@ -8,6 +8,8 @@ TagManager:
   - Bubble
   - Ceiling
   - Wall
+  - Wall-Left
+  - Wall-Right
   layers:
   - Default
   - TransparentFX
@@ -24,7 +26,7 @@ TagManager:
   - 
   - 
   - 
-  - 
+  - Spots
   - 
   - 
   - 
