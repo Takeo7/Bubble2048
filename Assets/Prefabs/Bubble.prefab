@@ -392,3 +392,6 @@ MonoBehaviour:
   numberText: {fileID: 3887241192907349107}
   rb: {fileID: 4070253069844373049}
   col: {fileID: 2730356605219050162}
+  lm:
+    serializedVersion: 2
+    m_Bits: 1

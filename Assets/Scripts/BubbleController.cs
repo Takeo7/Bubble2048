@@ -62,7 +62,8 @@ public class BubbleController : MonoBehaviour
                 dir = dir - launchPosition.position;
 
                 RaycastHit2D hit;
-                hit = Physics2D.Raycast(launchPosition.position, dir, 1000f, defaultLayer);
+                //hit = Physics2D.Raycast(launchPosition.position, dir, 1000f, defaultLayer);
+                hit = Physics2D.CircleCast(launchPosition.position, 0.121f, dir, 1000f, defaultLayer);
 
                 if (hit.collider != null)
                 {
@@ -71,19 +72,20 @@ public class BubbleController : MonoBehaviour
                         Vector2 hitResult;
                         if (hit.collider.CompareTag("Wall-Left"))
                         {
-                            hitResult = hit.point + new Vector2(0.1f, 0);
+                            hitResult = hit.point + new Vector2(0.3f, 0);
                         }
                         else
                         {
-                            hitResult = hit.point + new Vector2(-0.1f, 0);
+                            hitResult = hit.point + new Vector2(-0.3f, 0);
                         }
                         line.SetPosition(1, hit.point);
                         RaycastHit2D hit2;
-                        hit2 = Physics2D.Raycast(hitResult, Vector3.Reflect(dir, hit.normal), 10000f, defaultLayer);
-                        Debug.Log(hit2.collider.tag);
+                        //hit2 = Physics2D.Raycast(hitResult, Vector3.Reflect(dir, hit.normal), 10000f, defaultLayer);
+                        hit2 = Physics2D.CircleCast(hitResult, 0.121f, Vector3.Reflect(dir, hit.normal), 1000f, defaultLayer);
+                        line.SetPosition(2, hit2.point);
                         if (hit2.collider.CompareTag("Bubble") || hit2.collider.CompareTag("Ceiling"))
                         {
-                            line.SetPosition(2, hit2.point);
+                            //line.SetPosition(2, hit2.point);
                         }
                     }
                     else if (hit.collider.CompareTag("Ceiling") || hit.collider.CompareTag("Bubble"))

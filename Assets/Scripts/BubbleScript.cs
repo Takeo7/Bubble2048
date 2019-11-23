@@ -18,27 +18,33 @@ public class BubbleScript : MonoBehaviour
     Rigidbody2D rb;
     [SerializeField]
     Collider2D col;
-
-
-    Collider2D[] aroundCol = new Collider2D[1];
+    [SerializeField]
+    LayerMask lm;
+    ContactFilter2D cf;
+    Collider2D[] aroundCol = new Collider2D[6];
     bool isShooted = true;
     bool collidedEnd = false;
     Transform spot;
 
-
     public void SetStats(int n)
     {
         number = n;
+        SetText();
         if (number == 2048)
         {
+            cf.SetLayerMask(lm);
+            Physics2D.OverlapCircle(transform.position, 0.7f, cf, aroundCol);
             int length = aroundCol.Length;
             for (int i = 0; i < length; i++)
             {
-                aroundCol[i].GetComponent<BubbleScript>().Explode();
+                if (aroundCol[i] != null)
+                {
+                    aroundCol[i].GetComponent<BubbleScript>().Explode();
+                }               
             }
             Explode();
         }
-        SetText();
+        
     }
 
     public int GetNumber()
@@ -58,7 +64,11 @@ public class BubbleScript : MonoBehaviour
 
     public void Explode()
     {
-        spot.GetComponent<Collider2D>().enabled = true;
+        if (spot != null)
+        {
+            spot.GetComponent<Collider2D>().enabled = true;
+        }
+        
         BubbleController.instance.SetPoints(number);
         //Make some particles
         Destroy(gameObject);
@@ -72,7 +82,6 @@ public class BubbleScript : MonoBehaviour
             if (collision.collider.GetComponent<BubbleScript>().GetNumber() == number && isShooted)
             {
                 collision.collider.GetComponent<BubbleScript>().SetStats(number * 2);
-                collision.collider.GetComponent<BubbleScript>().SetText();
                 BubbleController.instance.SetPoints(number);
                 //Make some particles
                 Destroy(gameObject);
@@ -80,24 +89,9 @@ public class BubbleScript : MonoBehaviour
             else if(isShooted)
             {
                 rb.velocity = Vector3.zero;
-                rb.isKinematic = true;
+                rb.isKinematic = true;                
                 collidedEnd = true;
                 isShooted = false;
-            }
-            else
-            {
-                
-                if (aroundCol.Length == 1)
-                {
-                    aroundCol[0] = collision.collider;
-                }
-                else
-                {
-                    Collider2D[] temp = aroundCol;
-                    aroundCol = new Collider2D[temp.Length + 1];
-                    aroundCol = temp;
-                    aroundCol[aroundCol.Length - 1] = collision.collider;
-                }               
             }
 
         }else if (collision.collider.CompareTag("Floor"))
@@ -120,11 +114,12 @@ public class BubbleScript : MonoBehaviour
     {
         spot = collision.transform;
         if (collidedEnd)
-        {           
-            
+        {                       
             transform.position = spot.position;
             spot.GetComponent<Collider2D>().enabled = false;
             collidedEnd = false;
         }
     }
+
+
 }
