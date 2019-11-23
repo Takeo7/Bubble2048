@@ -40,7 +40,11 @@ public class BubbleController : MonoBehaviour
     LayerMask defaultLayer;
     [SerializeField]
     LayerMask SpotsMask;
+    
+    Collider2D spotRaycsted;
+    RaycastHit2D[] hitsSpots;
     bool canShoot = true;
+    bool isPressed = false;
 
     [Space]
     [Space]
@@ -49,14 +53,20 @@ public class BubbleController : MonoBehaviour
     [SerializeField]
     int points;
 
+    private void Start()
+    {
+        NewBubble();
+    }
+
     private void Update()
     {
-        if (canShoot)
+
+        if (canShoot && isPressed == false)
         {
             if (Input.GetMouseButton(0))
             {
                 Vector3 dir = Input.mousePosition;
-                dir.z = 0f;
+                dir.z = -.1f;
                 dir = Camera.main.ScreenToWorldPoint(dir);
                 line.SetPosition(0, launchPosition.position);
                 dir = dir - launchPosition.position;
@@ -85,26 +95,80 @@ public class BubbleController : MonoBehaviour
                         line.SetPosition(2, hit2.point);
                         if (hit2.collider.CompareTag("Bubble") || hit2.collider.CompareTag("Ceiling"))
                         {
-                            //line.SetPosition(2, hit2.point);
+                            ContactFilter2D cf = new ContactFilter2D();
+                            cf.SetLayerMask(SpotsMask);
+                            hitsSpots = new RaycastHit2D[20];
+                            int numbHits = Physics2D.CircleCast(hitResult, 0.121f, Vector3.Reflect(dir, hit.normal) * 10000f, cf, hitsSpots);
+                            RaycastHit2D[] tempSpots = hitsSpots;
+                            hitsSpots = new RaycastHit2D[numbHits];
+                            hitsSpots = tempSpots;
+
+                            Debug.DrawRay(hitResult, Vector3.Reflect(dir, hit.normal) * 10000f, Color.green, 2f);
+
+                            Collider2D currentSpot = new Collider2D();
+                            int length = hitsSpots.Length;
+                            for (int i = 0; i < length; i++)
+                            {
+                                if (hitsSpots[i].collider == null)
+                                {
+                                    Debug.Log(i);
+                                    currentSpot = hitsSpots[i - 1].collider;
+                                    break;
+                                }
+                            }
+                            if (currentSpot != spotRaycsted)
+                            {
+                                if (spotRaycsted != null)
+                                {
+                                    spotRaycsted.GetComponent<SpriteRenderer>().enabled = false;                                   
+                                }
+                                spotRaycsted = currentSpot;
+                                spotRaycsted.GetComponent<SpriteRenderer>().enabled = true;
+                                tempLaunch.GetComponent<BubbleScript>().SetSpot(spotRaycsted.transform);
+                            }
                         }
+                        
                     }
                     else if (hit.collider.CompareTag("Ceiling") || hit.collider.CompareTag("Bubble"))
                     {                       
                         line.SetPosition(1, hit.point);
                         line.SetPosition(2, hit.point);
+
+                        ContactFilter2D cf = new ContactFilter2D();
+                        cf.SetLayerMask(SpotsMask);
+                        hitsSpots = new RaycastHit2D[50];
+                        Physics2D.CircleCast(launchPosition.position, 0.121f, dir * 10000f, cf, hitsSpots);
+                        Debug.DrawRay(launchPosition.position, dir*10000f, Color.red, 2f);
+                        Collider2D currentSpot = new Collider2D();
+                        int length = hitsSpots.Length;
+                        for (int i = 0; i < length; i++)
+                        {
+                            if (hitsSpots[i].collider == null)
+                            {
+                                currentSpot = hitsSpots[i - 1].collider;
+                                break;
+                            }
+                        }
+                        if (currentSpot != spotRaycsted)
+                        {
+                            if (spotRaycsted != null)
+                            {
+                                spotRaycsted.GetComponent<SpriteRenderer>().enabled = false;
+                            }
+                            spotRaycsted = currentSpot;
+                            spotRaycsted.GetComponent<SpriteRenderer>().enabled = true;
+                            tempLaunch.GetComponent<BubbleScript>().SetSpot(spotRaycsted.transform);
+                        }
+                    }
+                    else
+                    {
+                        spotRaycsted.GetComponent<SpriteRenderer>().enabled = false;
                     }
                 }
             }
-            if (Input.GetMouseButtonDown(0))
-            {
-                tempLaunch = Instantiate(bubblePrefab, launchPosition.position, Quaternion.identity);
-                tempLaunch.GetComponent<BubbleScript>().SetStats(RandomNumber());
-
-
-
-            }
             else if (Input.GetMouseButtonUp(0))
             {
+                spotRaycsted.GetComponent<Collider2D>().isTrigger = true;
                 Vector3 dir = Input.mousePosition;
                 dir.z = 0f;
                 dir = Camera.main.ScreenToWorldPoint(dir);
@@ -119,7 +183,8 @@ public class BubbleController : MonoBehaviour
                 {
                     line.SetPosition(2, Vector3.zero);
                 }
-                
+                tempLaunch.GetComponent<BubbleScript>().SetIsShooted(true);
+                Invoke("NewBubble", 1f);
             }
         }
         
@@ -135,6 +200,13 @@ public class BubbleController : MonoBehaviour
          * xini = -2,4
          * yini = 4,6
          */
+    }
+
+    void NewBubble()
+    {
+        Debug.Log("Instanciado!");
+        tempLaunch = Instantiate(bubblePrefab, launchPosition.position, Quaternion.identity);
+        tempLaunch.GetComponent<BubbleScript>().SetStats(RandomNumber());
     }
 
     public void SetPoints(int p)
