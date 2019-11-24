@@ -101,6 +101,7 @@ public class BubbleScript : MonoBehaviour
             }
             yield return new WaitForEndOfFrame();
         }
+        BubbleController.instance.NewBubble();
     }
 
     //private void OnCollisionEnter2D(Collision2D collision)

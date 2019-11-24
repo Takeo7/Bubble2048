@@ -73,7 +73,7 @@ public class BubbleController : MonoBehaviour
 
                 RaycastHit2D hit;
                 //hit = Physics2D.Raycast(launchPosition.position, dir, 1000f, defaultLayer);
-                hit = Physics2D.CircleCast(launchPosition.position, 0.121f, dir, 1000f, defaultLayer);
+                hit = Physics2D.CircleCast(launchPosition.position, 0.121f, dir, 2000f, defaultLayer);
 
                 if (hit.collider != null)
                 {
@@ -98,20 +98,19 @@ public class BubbleController : MonoBehaviour
                             ContactFilter2D cf = new ContactFilter2D();
                             cf.SetLayerMask(SpotsMask);
                             hitsSpots = new RaycastHit2D[20];
-                            int numbHits = Physics2D.CircleCast(hitResult, 0.121f, Vector3.Reflect(dir, hit.normal) * 10000f, cf, hitsSpots);
+                            int numbHits = Physics2D.CircleCast(hitResult, 0.121f, Vector3.Reflect(dir, hit.normal) * 2000f, cf, hitsSpots);
                             RaycastHit2D[] tempSpots = hitsSpots;
                             hitsSpots = new RaycastHit2D[numbHits];
                             hitsSpots = tempSpots;
 
-                            Debug.DrawRay(hitResult, Vector3.Reflect(dir, hit.normal) * 10000f, Color.green, 2f);
+                            Debug.DrawRay(hitResult, Vector3.Reflect(dir, hit.normal) * 2000f, Color.green, 2f);
 
                             Collider2D currentSpot = new Collider2D();
                             int length = hitsSpots.Length;
                             for (int i = 0; i < length; i++)
                             {
-                                if (hitsSpots[i].collider == null)
+                                if (hitsSpots[i].collider.CompareTag("Bubble") || hitsSpots[i].collider.CompareTag("Ceiling"))
                                 {
-                                    Debug.Log(i);
                                     currentSpot = hitsSpots[i - 1].collider;
                                     break;
                                 }
@@ -136,14 +135,19 @@ public class BubbleController : MonoBehaviour
 
                         ContactFilter2D cf = new ContactFilter2D();
                         cf.SetLayerMask(SpotsMask);
-                        hitsSpots = new RaycastHit2D[50];
-                        Physics2D.CircleCast(launchPosition.position, 0.121f, dir * 10000f, cf, hitsSpots);
-                        Debug.DrawRay(launchPosition.position, dir*10000f, Color.red, 2f);
+                        hitsSpots = new RaycastHit2D[30];
+                        int numbHits = Physics2D.CircleCast(launchPosition.position + Vector3.up*0.5f, 0.121f, dir * 10000f, cf, hitsSpots);
+                        RaycastHit2D[] tempSpots = hitsSpots;
+                        hitsSpots = new RaycastHit2D[numbHits];
+                        hitsSpots = tempSpots;
+
+                        Debug.DrawRay(launchPosition.position + Vector3.up*0.5f, dir*10000f, Color.red, 2f);
+
                         Collider2D currentSpot = new Collider2D();
                         int length = hitsSpots.Length;
                         for (int i = 0; i < length; i++)
                         {
-                            if (hitsSpots[i].collider == null)
+                            if (hitsSpots[i].collider.CompareTag("Bubble") || hitsSpots[i].collider.CompareTag("Ceiling"))
                             {
                                 currentSpot = hitsSpots[i - 1].collider;
                                 break;
@@ -184,7 +188,6 @@ public class BubbleController : MonoBehaviour
                     line.SetPosition(2, Vector3.zero);
                 }
                 tempLaunch.GetComponent<BubbleScript>().SetIsShooted(true);
-                Invoke("NewBubble", 1f);
             }
         }
         
@@ -202,7 +205,7 @@ public class BubbleController : MonoBehaviour
          */
     }
 
-    void NewBubble()
+    public void NewBubble()
     {
         Debug.Log("Instanciado!");
         tempLaunch = Instantiate(bubblePrefab, launchPosition.position, Quaternion.identity);
