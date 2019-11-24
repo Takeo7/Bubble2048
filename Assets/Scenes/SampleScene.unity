@@ -1026,12 +1026,12 @@ MonoBehaviour:
   launchPosition: {fileID: 1197604202}
   force: 30
   line: {fileID: 1007687182}
-  defaultLayer:
+  raycastHitsLayer:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 65537
   SpotsMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 32769
   points: 0
 --- !u!4 &322438625
 Transform:

@@ -10,6 +10,7 @@ public class BubbleScript : MonoBehaviour
     [Space]
     [SerializeField]
     int number;
+    int pow;
     [Space]
     [Header("Components")]
     [SerializeField]
@@ -26,18 +27,23 @@ public class BubbleScript : MonoBehaviour
     bool collidedEnd = false;
     Transform spot;
 
+    bool isCeilingConnected = false;
+
     public void SetStats(int n)
     {
-        number = n;
+        int result = (int)Mathf.Pow(2, n);
+        number = result;
+        pow = n;
         SetText();
         if (number == 2048)
         {
             cf.SetLayerMask(lm);
+            aroundCol = new Collider2D[6];
             Physics2D.OverlapCircle(transform.position, 0.7f, cf, aroundCol);
             int length = aroundCol.Length;
             for (int i = 0; i < length; i++)
             {
-                if (aroundCol[i] != null)
+                if (aroundCol[i] != null && aroundCol[i].GetComponent<BubbleScript>() == true)
                 {
                     aroundCol[i].GetComponent<BubbleScript>().Explode();
                 }               
@@ -47,9 +53,45 @@ public class BubbleScript : MonoBehaviour
         
     }
 
+    public void ChechForFusion()
+    {
+        BubbleController.instance.AddBubbleFusionList(this);
+        cf.SetLayerMask(lm);
+        aroundCol = new Collider2D[6];
+        Physics2D.OverlapCircle(transform.position, 0.7f, cf, aroundCol);
+        int length = aroundCol.Length;
+        for (int i = 0; i < length; i++)
+        {
+            if (aroundCol[i] != null && aroundCol[i].GetComponent<BubbleScript>() == true)
+            {
+                if (aroundCol[i].GetComponent<BubbleScript>().GetNumber() == number)
+                {
+                    if (BubbleController.instance.CheckExistBubbleFusionList(aroundCol[i].GetComponent<BubbleScript>()) == false)
+                    {
+                        BubbleController.instance.AddBubbleFusionList(aroundCol[i].GetComponent<BubbleScript>());
+                    }                   
+                }
+            }            
+        }
+        if (BubbleController.instance.CheckIfHaveToCounterUp())
+        {
+            BubbleController.instance.UpCounter();
+        }        
+    }
+
+    public void Fusion()
+    {
+        Explode();
+    }
+
     public int GetNumber()
     {
         return number;
+    }
+
+    public int GetPow()
+    {
+        return pow;
     }
 
     public void SetText()
@@ -76,8 +118,9 @@ public class BubbleScript : MonoBehaviour
         if (spot != null)
         {
             spot.GetComponent<Collider2D>().enabled = true;
-        }
-        
+            spot.GetComponent<Collider2D>().isTrigger = false;
+            spot.GetComponent<SpriteRenderer>().enabled = false;
+        }       
         BubbleController.instance.SetPoints(number);
         //Make some particles
         Destroy(gameObject);
@@ -89,7 +132,7 @@ public class BubbleScript : MonoBehaviour
         while (collidedEnd == false)
         {
             float distance = (spot.position - transform.position).magnitude;
-            if (distance < 1f)
+            if (distance < 0.5f)
             {
                 collidedEnd = true;
                 rb.velocity = Vector3.zero;
@@ -101,7 +144,9 @@ public class BubbleScript : MonoBehaviour
             }
             yield return new WaitForEndOfFrame();
         }
-        BubbleController.instance.NewBubble();
+        col.isTrigger = false;
+        gameObject.layer = 16;
+        ChechForFusion();
     }
 
     //private void OnCollisionEnter2D(Collision2D collision)

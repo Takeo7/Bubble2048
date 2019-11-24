@@ -37,7 +37,7 @@ public class BubbleController : MonoBehaviour
     [SerializeField]
     LineRenderer line;
     [SerializeField]
-    LayerMask defaultLayer;
+    LayerMask raycastHitsLayer;
     [SerializeField]
     LayerMask SpotsMask;
     
@@ -52,6 +52,12 @@ public class BubbleController : MonoBehaviour
     [Header("Points")]
     [SerializeField]
     int points;
+
+    //Fusion Bubbles List
+    List<BubbleScript> bubblesToFusion = new List<BubbleScript>();
+    int listCounter = 0;
+
+    float circleCastRad = 0.121f;
 
     private void Start()
     {
@@ -73,7 +79,7 @@ public class BubbleController : MonoBehaviour
 
                 RaycastHit2D hit;
                 //hit = Physics2D.Raycast(launchPosition.position, dir, 1000f, defaultLayer);
-                hit = Physics2D.CircleCast(launchPosition.position, 0.121f, dir, 2000f, defaultLayer);
+                hit = Physics2D.CircleCast(launchPosition.position, circleCastRad, dir, 2000f, raycastHitsLayer);
 
                 if (hit.collider != null)
                 {
@@ -91,14 +97,14 @@ public class BubbleController : MonoBehaviour
                         line.SetPosition(1, hit.point);
                         RaycastHit2D hit2;
                         //hit2 = Physics2D.Raycast(hitResult, Vector3.Reflect(dir, hit.normal), 10000f, defaultLayer);
-                        hit2 = Physics2D.CircleCast(hitResult, 0.121f, Vector3.Reflect(dir, hit.normal), 1000f, defaultLayer);
+                        hit2 = Physics2D.CircleCast(hitResult, circleCastRad, Vector3.Reflect(dir, hit.normal), 1000f, raycastHitsLayer);
                         line.SetPosition(2, hit2.point);
                         if (hit2.collider.CompareTag("Bubble") || hit2.collider.CompareTag("Ceiling"))
                         {
                             ContactFilter2D cf = new ContactFilter2D();
                             cf.SetLayerMask(SpotsMask);
                             hitsSpots = new RaycastHit2D[20];
-                            int numbHits = Physics2D.CircleCast(hitResult, 0.121f, Vector3.Reflect(dir, hit.normal) * 2000f, cf, hitsSpots);
+                            int numbHits = Physics2D.CircleCast(hitResult, circleCastRad, Vector3.Reflect(dir, hit.normal) * 2000f, cf, hitsSpots);
                             RaycastHit2D[] tempSpots = hitsSpots;
                             hitsSpots = new RaycastHit2D[numbHits];
                             hitsSpots = tempSpots;
@@ -136,7 +142,7 @@ public class BubbleController : MonoBehaviour
                         ContactFilter2D cf = new ContactFilter2D();
                         cf.SetLayerMask(SpotsMask);
                         hitsSpots = new RaycastHit2D[30];
-                        int numbHits = Physics2D.CircleCast(launchPosition.position + Vector3.up*0.5f, 0.121f, dir * 10000f, cf, hitsSpots);
+                        int numbHits = Physics2D.CircleCast(launchPosition.position + Vector3.up*0.5f, circleCastRad, dir * 10000f, cf, hitsSpots);
                         RaycastHit2D[] tempSpots = hitsSpots;
                         hitsSpots = new RaycastHit2D[numbHits];
                         hitsSpots = tempSpots;
@@ -207,7 +213,8 @@ public class BubbleController : MonoBehaviour
 
     public void NewBubble()
     {
-        Debug.Log("Instanciado!");
+        bubblesToFusion.Clear();
+        listCounter = 0;
         tempLaunch = Instantiate(bubblePrefab, launchPosition.position, Quaternion.identity);
         tempLaunch.GetComponent<BubbleScript>().SetStats(RandomNumber());
     }
@@ -225,13 +232,89 @@ public class BubbleController : MonoBehaviour
         {
             rand = 1;
         }
-        int result = (int)Mathf.Pow(2, rand);
-        return result;
+        
+        return rand;
     }
 
     public void SetCanShoot(bool cs)
     {
         canShoot = cs;
+    }
+
+    public void AddBubbleFusionList(BubbleScript b)
+    {
+        bubblesToFusion.Add(b);
+    }
+
+    public bool CheckExistBubbleFusionList(BubbleScript b)
+    {
+        return bubblesToFusion.Contains(b);
+    }
+
+    public void UpCounter()
+    {
+        listCounter++;
+        CheckNextInFusionList();
+    }
+
+    public bool CheckIfHaveToCounterUp()
+    {
+        if (listCounter < bubblesToFusion.Count)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    void CheckNextInFusionList()
+    {
+        if (listCounter < bubblesToFusion.Count)
+        {
+            bubblesToFusion[listCounter].ChechForFusion();
+        }
+        else
+        {
+            FusionBubbles();
+        }
+        
+    }
+
+    public bool IndexListExist(int i)
+    {
+        if (bubblesToFusion[i] == null)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    void FusionBubbles()
+    {
+        int length = bubblesToFusion.Count - 1;
+        for (int i = 0; i < length; i++)
+        {
+            bubblesToFusion[i].Fusion();
+        }
+        if (bubblesToFusion[length].GetPow() < 11)
+        {
+            bubblesToFusion[length].SetStats(bubblesToFusion[length].GetPow() + length);
+            //Recheck(bubblesToFusion[length]);
+        }       
+        NewBubble();
+    }
+
+    void Recheck(BubbleScript b)
+    {
+        BubbleScript bs = b;
+        bubblesToFusion.Clear();
+        listCounter = 0;
+        b.ChechForFusion();
     }
 
 }

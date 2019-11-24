@@ -394,4 +394,4 @@ MonoBehaviour:
   col: {fileID: 2730356605219050162}
   lm:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 65536
