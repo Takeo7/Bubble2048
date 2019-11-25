@@ -61,6 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\ParticleScript.cs" />
+    <Compile Include="Assets\PerfectScript.cs" />
     <Compile Include="Assets\Scripts\BubbleController.cs" />
     <Compile Include="Assets\Scripts\BubbleScript.cs" />
     <None Include="Assets\TextMesh Pro\Resources\Shaders\TMP_SDF-Surface-Mobile.shader" />

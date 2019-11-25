@@ -59,6 +59,8 @@ public class BubbleController : MonoBehaviour
     int points;
     [SerializeField]
     TextMeshProUGUI pointsText;
+    [SerializeField]
+    GameObject perfectText;
 
     //Fusion Bubbles List
     List<BubbleScript> bubblesToFusion = new List<BubbleScript>();
@@ -540,6 +542,10 @@ public class BubbleController : MonoBehaviour
     public void RemoveBubbleFramGlobalList(BubbleScript b)
     {
         allBubbles.Remove(b);
+        if (allBubbles.Count == 0)
+        {
+            perfectText.SetActive(true);
+        }
     }
 
     void CheckFallBubbles()
