@@ -26,11 +26,15 @@ public class BubbleScript : MonoBehaviour
     bool isShooted = true;
     bool collidedEnd = false;
     Transform spot;
+    [SerializeField]
+    GameObject explosionParticles;
+
 
     public bool isCeilingConnected;
 
-    public void SetStats(int n)
+    public void SetStats(int n,Color c)
     {
+        GetComponent<SpriteRenderer>().color = c;
         int result = (int)Mathf.Pow(2, n);
         number = result;
         pow = n;
@@ -91,7 +95,11 @@ public class BubbleScript : MonoBehaviour
             {
                 if (aroundCol[i].GetComponent<BubbleScript>().GetNumber() == number)
                 {
-                    return true;
+                    if (aroundCol[i].GetComponent<BubbleScript>() != this)
+                    {
+                        return true;
+                    }
+                    
                 }
             }
         }
@@ -112,13 +120,14 @@ public class BubbleScript : MonoBehaviour
                 {
                     aroundCol[i].GetComponent<BubbleScript>().isCeilingConnected = true;
                     aroundCol[i].GetComponent<BubbleScript>().CheckAroundCeiling();
-                }                
+                }            
             }
         }
     }
 
     public void Fall()
     {
+        Debug.Log("Fall");
         if (spot != null)
         {
             spot.GetComponent<Collider2D>().enabled = true;
@@ -170,11 +179,15 @@ public class BubbleScript : MonoBehaviour
         {
             spot.GetComponent<Collider2D>().enabled = true;
             spot.GetComponent<Collider2D>().isTrigger = false;
-            spot.GetComponent<SpriteRenderer>().enabled = false;
+            //spot.GetComponent<SpriteRenderer>().enabled = false;
+            spot.transform.GetChild(0).gameObject.SetActive(false);
         }       
         BubbleController.instance.SetPoints(number);
         //Make some particles
         BubbleController.instance.RemoveBubbleFramGlobalList(this);
+        ParticleSystem particleExplosionTemp = Instantiate(explosionParticles, transform.position, transform.rotation).GetComponent<ParticleSystem>();
+        ParticleSystem.MainModule main = particleExplosionTemp.main;
+        main.startColor = GetComponent<SpriteRenderer>().color;
         Destroy(gameObject);
     }
 
@@ -183,6 +196,7 @@ public class BubbleScript : MonoBehaviour
     {
         while (collidedEnd == false)
         {
+            Debug.Log(spot);
             float distance = (spot.position - transform.position).magnitude;
             if (distance < 1f)
             {
@@ -190,8 +204,7 @@ public class BubbleScript : MonoBehaviour
                 rb.velocity = Vector3.zero;
                 rb.isKinematic = true;
                 transform.position = spot.position;
-                spot.GetComponent<Collider2D>().enabled = false;
-                BubbleController.instance.SetCanShoot(true);                
+                spot.GetComponent<Collider2D>().enabled = false;                
             }
             yield return new WaitForEndOfFrame();
         }

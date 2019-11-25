@@ -24,6 +24,8 @@ public class BubbleController : MonoBehaviour
     [Header("Bubble")]
     [SerializeField]
     GameObject bubblePrefab;
+    [SerializeField]
+    Color[] colors;
 
     [Space]
     [Space]
@@ -39,7 +41,9 @@ public class BubbleController : MonoBehaviour
     [SerializeField]
     LayerMask raycastHitsLayer;
     [SerializeField]
-    LayerMask SpotsMask;
+    LayerMask layerCast;
+    [SerializeField]
+    LayerMask spotLayer;
     
     Collider2D spotRaycsted;
     RaycastHit2D[] hitsSpots;
@@ -60,7 +64,7 @@ public class BubbleController : MonoBehaviour
     //Global Bubbles List
     List<BubbleScript> allBubbles = new List<BubbleScript>();
 
-    float circleCastRad = 0.121f;
+    float circleCastRad = 0.25f;
 
     private void Start()
     {
@@ -84,6 +88,7 @@ public class BubbleController : MonoBehaviour
                 //hit = Physics2D.Raycast(launchPosition.position, dir, 1000f, defaultLayer);
                 hit = Physics2D.CircleCast(launchPosition.position, circleCastRad, dir, 2000f, raycastHitsLayer);
 
+
                 if (hit.collider != null)
                 {
                     if (hit.collider.CompareTag("Wall-Left") || hit.collider.CompareTag("Wall-Right"))
@@ -91,11 +96,11 @@ public class BubbleController : MonoBehaviour
                         Vector2 hitResult;
                         if (hit.collider.CompareTag("Wall-Left"))
                         {
-                            hitResult = hit.point + new Vector2(0.3f, 0);
+                            hitResult = hit.point + new Vector2(0.3f, -0.5f);
                         }
                         else
                         {
-                            hitResult = hit.point + new Vector2(-0.3f, 0);
+                            hitResult = hit.point + new Vector2(-0.3f, -0.5f);
                         }
                         line.SetPosition(1, hit.point);
                         RaycastHit2D hit2;
@@ -105,34 +110,77 @@ public class BubbleController : MonoBehaviour
                         if (hit2.collider.CompareTag("Bubble") || hit2.collider.CompareTag("Ceiling"))
                         {
                             ContactFilter2D cf = new ContactFilter2D();
-                            cf.SetLayerMask(SpotsMask);
+                            cf.SetLayerMask(layerCast);
                             hitsSpots = new RaycastHit2D[20];
-                            int numbHits = Physics2D.CircleCast(hitResult, circleCastRad, Vector3.Reflect(dir, hit.normal) * 2000f, cf, hitsSpots);
+                            int numbHits = Physics2D.CircleCast(hitResult, circleCastRad, Vector3.Reflect(dir, hit.normal) * 20000f, cf, hitsSpots);
                             RaycastHit2D[] tempSpots = hitsSpots;
                             hitsSpots = new RaycastHit2D[numbHits];
                             hitsSpots = tempSpots;
 
-                            Debug.DrawRay(hitResult, Vector3.Reflect(dir, hit.normal) * 2000f, Color.green, 2f);
+                            Debug.DrawRay(hitResult, Vector3.Reflect(dir, hit.normal) * 20000f, Color.green, 2f);
 
                             Collider2D currentSpot = new Collider2D();
                             int length = hitsSpots.Length;
                             for (int i = 0; i < length; i++)
                             {
-                                if (hitsSpots[i].collider.CompareTag("Bubble") || hitsSpots[i].collider.CompareTag("Ceiling"))
+                                if (hitsSpots[i].collider != null)
                                 {
-                                    currentSpot = hitsSpots[i - 1].collider;
-                                    break;
-                                }
+                                    if (hitsSpots[i].collider.CompareTag("Bubble") || hitsSpots[i].collider.CompareTag("Ceiling") || hitsSpots[i].collider.CompareTag("Wall-Left") || hitsSpots[i].collider.CompareTag("Wall-Right"))
+                                    {
+                                        if (i != 0)
+                                        {
+                                            currentSpot = hitsSpots[i - 1].collider;
+                                            break;
+                                        }
+                                    }
+                                }                                
                             }
                             if (currentSpot != spotRaycsted)
                             {
                                 if (spotRaycsted != null)
                                 {
-                                    spotRaycsted.GetComponent<SpriteRenderer>().enabled = false;                                   
+                                    //spotRaycsted.GetComponent<SpriteRenderer>().enabled = false;     
+                                    if (spotRaycsted.CompareTag("Spot"))
+                                    {
+                                        spotRaycsted.transform.GetChild(0).gameObject.SetActive(false);
+                                    }
+                                    
                                 }
-                                spotRaycsted = currentSpot;
-                                spotRaycsted.GetComponent<SpriteRenderer>().enabled = true;
-                                tempLaunch.GetComponent<BubbleScript>().SetSpot(spotRaycsted.transform);
+                                if (currentSpot != null)
+                                {
+                                    spotRaycsted = currentSpot;
+                                }
+                                
+                                //spotRaycsted.GetComponent<SpriteRenderer>().enabled = true;
+                                spotRaycsted.transform.GetChild(0).gameObject.SetActive(true);
+                                Debug.Log("Reflect " + spotRaycsted,spotRaycsted.gameObject);
+                                if (spotRaycsted.CompareTag("Spot"))
+                                {
+                                    spotRaycsted.transform.GetChild(0).GetComponent<SpriteRenderer>().color = tempLaunch.GetComponent<SpriteRenderer>().color;
+                                    tempLaunch.GetComponent<BubbleScript>().SetSpot(spotRaycsted.transform);
+                                }
+                                else
+                                {
+                                    RaycastHit2D r;
+                                    
+
+                                    if (hit.collider.CompareTag("Wall-Left"))
+                                    {
+                                        hitResult = hit.point + new Vector2(0.3f, -0.5f);
+                                    }
+                                    else
+                                    {
+                                        hitResult = hit.point + new Vector2(-0.3f, -0.5f);
+                                    }
+                                    r = Physics2D.Raycast(hitResult, hit.normal, 10f, spotLayer);
+                                    spotRaycsted = r.collider;
+                                    Debug.DrawRay(hitResult, hit.normal,Color.blue,2f);
+                                    Debug.Log(spotRaycsted);
+                                    spotRaycsted.transform.GetChild(0).gameObject.SetActive(true);
+                                    spotRaycsted.transform.GetChild(0).GetComponent<SpriteRenderer>().color = tempLaunch.GetComponent<SpriteRenderer>().color;
+                                    tempLaunch.GetComponent<BubbleScript>().SetSpot(spotRaycsted.transform);
+                                }
+                                
                             }
                         }
                         
@@ -143,7 +191,7 @@ public class BubbleController : MonoBehaviour
                         line.SetPosition(2, hit.point);
 
                         ContactFilter2D cf = new ContactFilter2D();
-                        cf.SetLayerMask(SpotsMask);
+                        cf.SetLayerMask(layerCast);
                         hitsSpots = new RaycastHit2D[30];
                         int numbHits = Physics2D.CircleCast(launchPosition.position + Vector3.up*0.5f, circleCastRad, dir * 10000f, cf, hitsSpots);
                         RaycastHit2D[] tempSpots = hitsSpots;
@@ -156,20 +204,37 @@ public class BubbleController : MonoBehaviour
                         int length = hitsSpots.Length;
                         for (int i = 0; i < length; i++)
                         {
-                            if (hitsSpots[i].collider.CompareTag("Bubble") || hitsSpots[i].collider.CompareTag("Ceiling"))
+                            if (hitsSpots[i].collider.CompareTag("Bubble") || hitsSpots[i].collider.CompareTag("Ceiling") || hitsSpots[i].collider.CompareTag("Wall-Left") || hitsSpots[i].collider.CompareTag("Wall-Right"))
                             {
-                                
-                                currentSpot = hitsSpots[i - 1].collider;
-                                break;
+
+                                if (i != 0)
+                                {
+                                    currentSpot = hitsSpots[i - 1].collider;
+                                    break;
+                                }
                             }
                         }
-                        if (spotRaycsted != null)
+                        if (currentSpot != spotRaycsted)
                         {
-                            spotRaycsted.GetComponent<SpriteRenderer>().enabled = false;
+                            if (spotRaycsted != null)
+                            {
+                                //spotRaycsted.GetComponent<SpriteRenderer>().enabled = false;     
+                                if (spotRaycsted.CompareTag("Spot"))
+                                {
+                                    spotRaycsted.transform.GetChild(0).gameObject.SetActive(false);
+                                }
+                                    
+                            }
+                            spotRaycsted = currentSpot;
+                            //spotRaycsted.GetComponent<SpriteRenderer>().enabled = true;
+                            spotRaycsted.transform.GetChild(0).gameObject.SetActive(true);
+                            Debug.Log("Direct " + spotRaycsted, spotRaycsted.gameObject);
+                            if (spotRaycsted.CompareTag("Spot"))
+                            {
+                                spotRaycsted.transform.GetChild(0).GetComponent<SpriteRenderer>().color = tempLaunch.GetComponent<SpriteRenderer>().color;
+                                tempLaunch.GetComponent<BubbleScript>().SetSpot(spotRaycsted.transform);
+                            }
                         }
-                        spotRaycsted = currentSpot;
-                        spotRaycsted.GetComponent<SpriteRenderer>().enabled = true;
-                        tempLaunch.GetComponent<BubbleScript>().SetSpot(spotRaycsted.transform);
                     }
                     else
                     {
@@ -177,7 +242,7 @@ public class BubbleController : MonoBehaviour
                     }
                 }
             }
-            else if (Input.GetMouseButtonUp(0))
+            else if (Input.GetMouseButtonUp(0) && spotRaycsted != null)
             {
                 spotRaycsted.GetComponent<Collider2D>().isTrigger = true;
                 Vector3 dir = Input.mousePosition;
@@ -217,7 +282,9 @@ public class BubbleController : MonoBehaviour
         bubblesToFusion.Clear();
         listCounter = 0;
         tempLaunch = Instantiate(bubblePrefab, launchPosition.position, Quaternion.identity);
-        tempLaunch.GetComponent<BubbleScript>().SetStats(RandomNumber());
+        int rn = RandomNumber();
+        tempLaunch.GetComponent<BubbleScript>().SetStats(rn,colors[rn-1]);
+        canShoot = true;
     }
 
     public void SetPoints(int p)
@@ -279,10 +346,12 @@ public class BubbleController : MonoBehaviour
         }
         else if(listCounter == bubblesToFusion.Count && bubblesToFusion.Count == 1)
         {
+            
             NewBubble();
         }
         else
         {
+            Debug.Log("Holi");
             FusionBubbles();
         }
         
@@ -305,11 +374,12 @@ public class BubbleController : MonoBehaviour
         int length = bubblesToFusion.Count - 1;
         for (int i = 0; i < length; i++)
         {
-            bubblesToFusion[i].Fusion();
+            bubblesToFusion[i].Explode();
         }
         if (bubblesToFusion[length].GetPow() < 11)
         {
-            bubblesToFusion[length].SetStats(bubblesToFusion[length].GetPow() + length);
+            int numb = bubblesToFusion[length].GetPow() + length;
+            bubblesToFusion[length].SetStats(numb,colors[numb-1]);
             Recheck(bubblesToFusion[length]);
         }
     }
@@ -317,7 +387,7 @@ public class BubbleController : MonoBehaviour
     void Recheck(BubbleScript b)
     {
         BubbleScript bs = b;
-        
+        Debug.Log("Recheck");
         if (bs.CheckAround())
         {
             bubblesToFusion.Clear();
@@ -326,6 +396,7 @@ public class BubbleController : MonoBehaviour
         }
         else
         {
+            Debug.Log("Wolo");
             CheckFallBubbles();
             NewBubble();
         }
@@ -346,11 +417,15 @@ public class BubbleController : MonoBehaviour
 
     void CheckFallBubbles()
     {
-        Debug.Log("Wolo");
+        foreach (BubbleScript item in allBubbles)
+        {
+            item.isCeilingConnected = false;
+        }
+        Debug.Log("CheckFallBubbles");
         List<BubbleScript> attachedToCeiling = new List<BubbleScript>();
         foreach (BubbleScript item in allBubbles)
         {
-            if (item.transform.position.y > 4.2f)
+            if (item.transform.position.y > 3.2f)
             {
                 attachedToCeiling.Add(item);
             }
@@ -372,5 +447,4 @@ public class BubbleController : MonoBehaviour
     }
 
     #endregion
-
 }
