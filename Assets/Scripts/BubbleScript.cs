@@ -27,7 +27,7 @@ public class BubbleScript : MonoBehaviour
     bool collidedEnd = false;
     Transform spot;
 
-    bool isCeilingConnected = false;
+    public bool isCeilingConnected;
 
     public void SetStats(int n)
     {
@@ -38,7 +38,7 @@ public class BubbleScript : MonoBehaviour
         if (number == 2048)
         {
             cf.SetLayerMask(lm);
-            aroundCol = new Collider2D[6];
+            aroundCol = new Collider2D[7];
             Physics2D.OverlapCircle(transform.position, 0.7f, cf, aroundCol);
             int length = aroundCol.Length;
             for (int i = 0; i < length; i++)
@@ -53,11 +53,14 @@ public class BubbleScript : MonoBehaviour
         
     }
 
-    public void ChechForFusion()
+    public void ChechForFusion(bool isFirst)
     {
-        BubbleController.instance.AddBubbleFusionList(this);
+        if (isFirst)
+        {
+            BubbleController.instance.AddBubbleFusionList(this);
+        }       
         cf.SetLayerMask(lm);
-        aroundCol = new Collider2D[6];
+        aroundCol = new Collider2D[7];
         Physics2D.OverlapCircle(transform.position, 0.7f, cf, aroundCol);
         int length = aroundCol.Length;
         for (int i = 0; i < length; i++)
@@ -69,14 +72,62 @@ public class BubbleScript : MonoBehaviour
                     if (BubbleController.instance.CheckExistBubbleFusionList(aroundCol[i].GetComponent<BubbleScript>()) == false)
                     {
                         BubbleController.instance.AddBubbleFusionList(aroundCol[i].GetComponent<BubbleScript>());
-                    }                   
+                    }
                 }
-            }            
+            }
         }
-        if (BubbleController.instance.CheckIfHaveToCounterUp())
+        BubbleController.instance.UpCounter();    
+    }
+
+    public bool CheckAround()
+    {
+        cf.SetLayerMask(lm);
+        aroundCol = new Collider2D[7];
+        Physics2D.OverlapCircle(transform.position, 0.7f, cf, aroundCol);
+        int length = aroundCol.Length;
+        for (int i = 0; i < length; i++)
         {
-            BubbleController.instance.UpCounter();
-        }        
+            if (aroundCol[i] != null && aroundCol[i].GetComponent<BubbleScript>() == true)
+            {
+                if (aroundCol[i].GetComponent<BubbleScript>().GetNumber() == number)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public void CheckAroundCeiling()
+    {
+        cf.SetLayerMask(lm);
+        aroundCol = new Collider2D[7];
+        Physics2D.OverlapCircle(transform.position, 0.7f, cf, aroundCol);
+        int length = aroundCol.Length;
+        for (int i = 0; i < length; i++)
+        {
+            if (aroundCol[i] != null && aroundCol[i].GetComponent<BubbleScript>() == true)
+            {
+                if (aroundCol[i].GetComponent<BubbleScript>().isCeilingConnected == false)
+                {
+                    aroundCol[i].GetComponent<BubbleScript>().isCeilingConnected = true;
+                    aroundCol[i].GetComponent<BubbleScript>().CheckAroundCeiling();
+                }                
+            }
+        }
+    }
+
+    public void Fall()
+    {
+        if (spot != null)
+        {
+            spot.GetComponent<Collider2D>().enabled = true;
+            spot.GetComponent<Collider2D>().isTrigger = false;
+            spot.GetComponent<SpriteRenderer>().enabled = false;
+        }
+        col.isTrigger = true;
+        rb.bodyType = RigidbodyType2D.Dynamic;
+        rb.gravityScale = 1;
     }
 
     public void Fusion()
@@ -123,6 +174,7 @@ public class BubbleScript : MonoBehaviour
         }       
         BubbleController.instance.SetPoints(number);
         //Make some particles
+        BubbleController.instance.RemoveBubbleFramGlobalList(this);
         Destroy(gameObject);
     }
 
@@ -132,69 +184,28 @@ public class BubbleScript : MonoBehaviour
         while (collidedEnd == false)
         {
             float distance = (spot.position - transform.position).magnitude;
-            if (distance < 0.5f)
+            if (distance < 1f)
             {
                 collidedEnd = true;
                 rb.velocity = Vector3.zero;
                 rb.isKinematic = true;
                 transform.position = spot.position;
                 spot.GetComponent<Collider2D>().enabled = false;
-                BubbleController.instance.SetCanShoot(true);
-                
+                BubbleController.instance.SetCanShoot(true);                
             }
             yield return new WaitForEndOfFrame();
         }
         col.isTrigger = false;
         gameObject.layer = 16;
-        ChechForFusion();
+        BubbleController.instance.AddBubbleToGlobalList(this);
+        ChechForFusion(true);
     }
 
-    //private void OnCollisionEnter2D(Collision2D collision)
-    //{
-    //    if (collision.collider.CompareTag("Bubble"))
-    //    {
-    //        BubbleController.instance.SetCanShoot(true);
-    //        if (collision.collider.GetComponent<BubbleScript>().GetNumber() == number && isShooted)
-    //        {
-    //            collision.collider.GetComponent<BubbleScript>().SetStats(number * 2);
-    //            BubbleController.instance.SetPoints(number);
-    //            //Make some particles
-    //            Destroy(gameObject);
-    //        }
-    //        else if(isShooted)
-    //        {
-    //            rb.velocity = Vector3.zero;
-    //            rb.isKinematic = true;                
-    //            collidedEnd = true;
-    //            isShooted = false;
-    //        }
-
-    //    }else if (collision.collider.CompareTag("Floor"))
-    //    {
-    //        BubbleController.instance.SetPoints(number);
-    //        //Make some particles
-    //        spot.GetComponent<Collider2D>().enabled = true;
-    //        Destroy(gameObject);
-    //    }
-    //    else if (collision.collider.CompareTag("Ceiling"))
-    //    {
-    //        BubbleController.instance.SetCanShoot(true);
-    //        rb.velocity = Vector3.zero;
-    //        rb.isKinematic = true;
-    //        collidedEnd = true;
-    //        isShooted = false;
-    //    }
-    //}
-    //private void OnTriggerStay2D(Collider2D collision)
-    //{
-    //    spot = collision.transform;
-    //    if (collidedEnd)
-    //    {
-    //        transform.position = spot.position;
-    //        spot.GetComponent<Collider2D>().enabled = false;
-    //        collidedEnd = false;
-    //    }
-    //}
-
-
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Floor"))
+        {
+            Explode();
+        }
+    }
 }

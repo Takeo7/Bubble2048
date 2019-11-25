@@ -57,6 +57,9 @@ public class BubbleController : MonoBehaviour
     List<BubbleScript> bubblesToFusion = new List<BubbleScript>();
     int listCounter = 0;
 
+    //Global Bubbles List
+    List<BubbleScript> allBubbles = new List<BubbleScript>();
+
     float circleCastRad = 0.121f;
 
     private void Start()
@@ -155,20 +158,18 @@ public class BubbleController : MonoBehaviour
                         {
                             if (hitsSpots[i].collider.CompareTag("Bubble") || hitsSpots[i].collider.CompareTag("Ceiling"))
                             {
+                                
                                 currentSpot = hitsSpots[i - 1].collider;
                                 break;
                             }
                         }
-                        if (currentSpot != spotRaycsted)
+                        if (spotRaycsted != null)
                         {
-                            if (spotRaycsted != null)
-                            {
-                                spotRaycsted.GetComponent<SpriteRenderer>().enabled = false;
-                            }
-                            spotRaycsted = currentSpot;
-                            spotRaycsted.GetComponent<SpriteRenderer>().enabled = true;
-                            tempLaunch.GetComponent<BubbleScript>().SetSpot(spotRaycsted.transform);
+                            spotRaycsted.GetComponent<SpriteRenderer>().enabled = false;
                         }
+                        spotRaycsted = currentSpot;
+                        spotRaycsted.GetComponent<SpriteRenderer>().enabled = true;
+                        tempLaunch.GetComponent<BubbleScript>().SetSpot(spotRaycsted.transform);
                     }
                     else
                     {
@@ -257,23 +258,28 @@ public class BubbleController : MonoBehaviour
         CheckNextInFusionList();
     }
 
-    public bool CheckIfHaveToCounterUp()
-    {
-        if (listCounter < bubblesToFusion.Count)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
+    //public bool CheckIfHaveToCounterUp()
+    //{
+    //    if (listCounter < bubblesToFusion.Count)
+    //    {
+    //        return true;
+    //    }
+    //    else
+    //    {
+    //        return false;
+    //    }
+    //}
 
     void CheckNextInFusionList()
     {
         if (listCounter < bubblesToFusion.Count)
         {
-            bubblesToFusion[listCounter].ChechForFusion();
+            
+            bubblesToFusion[listCounter].ChechForFusion(false);
+        }
+        else if(listCounter == bubblesToFusion.Count && bubblesToFusion.Count == 1)
+        {
+            NewBubble();
         }
         else
         {
@@ -304,17 +310,67 @@ public class BubbleController : MonoBehaviour
         if (bubblesToFusion[length].GetPow() < 11)
         {
             bubblesToFusion[length].SetStats(bubblesToFusion[length].GetPow() + length);
-            //Recheck(bubblesToFusion[length]);
-        }       
-        NewBubble();
+            Recheck(bubblesToFusion[length]);
+        }
     }
 
     void Recheck(BubbleScript b)
     {
         BubbleScript bs = b;
-        bubblesToFusion.Clear();
-        listCounter = 0;
-        b.ChechForFusion();
+        
+        if (bs.CheckAround())
+        {
+            bubblesToFusion.Clear();
+            listCounter = 0;
+            bs.ChechForFusion(true);           
+        }
+        else
+        {
+            CheckFallBubbles();
+            NewBubble();
+        }
+        
     }
+
+    #region CheckFall
+
+    public void AddBubbleToGlobalList(BubbleScript b)
+    {
+        allBubbles.Add(b);
+    }
+
+    public void RemoveBubbleFramGlobalList(BubbleScript b)
+    {
+        allBubbles.Remove(b);
+    }
+
+    void CheckFallBubbles()
+    {
+        Debug.Log("Wolo");
+        List<BubbleScript> attachedToCeiling = new List<BubbleScript>();
+        foreach (BubbleScript item in allBubbles)
+        {
+            if (item.transform.position.y > 4.2f)
+            {
+                attachedToCeiling.Add(item);
+            }
+        }
+
+        foreach (BubbleScript item in attachedToCeiling)
+        {
+            item.CheckAroundCeiling();
+        }
+
+        foreach (BubbleScript item in allBubbles)
+        {
+            if (item.isCeilingConnected == false)
+            {
+                item.Fall();
+            }
+        }
+
+    }
+
+    #endregion
 
 }
