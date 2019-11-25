@@ -24,6 +24,7 @@ public class BubbleScript : MonoBehaviour
     ContactFilter2D cf;
     Collider2D[] aroundCol = new Collider2D[6];
     bool isShooted = true;
+    public int bounces;
     bool collidedEnd = false;
     Transform spot;
     [SerializeField]
@@ -128,6 +129,7 @@ public class BubbleScript : MonoBehaviour
     public void Fall()
     {
         Debug.Log("Fall");
+        transform.SetParent(null);
         if (spot != null)
         {
             spot.GetComponent<Collider2D>().enabled = true;
@@ -196,7 +198,6 @@ public class BubbleScript : MonoBehaviour
     {
         while (collidedEnd == false)
         {
-            Debug.Log(spot);
             float distance = (spot.position - transform.position).magnitude;
             if (distance < 1f)
             {
@@ -210,15 +211,46 @@ public class BubbleScript : MonoBehaviour
         }
         col.isTrigger = false;
         gameObject.layer = 16;
+        transform.SetParent(spot);
         BubbleController.instance.AddBubbleToGlobalList(this);
         ChechForFusion(true);
     }
 
+    public void SetBubbleInNewLine(Transform s)
+    {
+        spot = s;
+        rb.velocity = Vector3.zero;
+        rb.isKinematic = true;
+        transform.position = spot.position;
+        spot.GetComponent<Collider2D>().enabled = false;        
+        col.isTrigger = false;
+        gameObject.layer = 16;
+        transform.SetParent(spot);
+        BubbleController.instance.AddBubbleToGlobalList(this);
+    }
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.CompareTag("Floor"))
+        if (collision.CompareTag("Floor") && transform.parent == null)
         {
             Explode();
+        }
+        else if (collision.CompareTag("Floor") && transform.parent != null)
+        {
+            Debug.LogError("GAMEOVER", gameObject);
+            BubbleController.instance.GameOver();
+        }        
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.collider.CompareTag("Wall-Left") || collision.collider.CompareTag("Wall-Left"))
+        {
+            bounces--;
+            if (bounces == 0)
+            {
+                col.isTrigger = true;
+            }
         }
     }
 }

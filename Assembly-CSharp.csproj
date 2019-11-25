@@ -60,10 +60,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\ParticleScript.cs" />
-    <Compile Include="Assets\PerfectScript.cs" />
     <Compile Include="Assets\Scripts\BubbleController.cs" />
     <Compile Include="Assets\Scripts\BubbleScript.cs" />
+    <Compile Include="Assets\Scripts\FloorScript.cs" />
+    <Compile Include="Assets\Scripts\GameOverScript.cs" />
+    <Compile Include="Assets\Scripts\ParticleScript.cs" />
+    <Compile Include="Assets\Scripts\PerfectScript.cs" />
     <None Include="Assets\TextMesh Pro\Resources\Shaders\TMP_SDF-Surface-Mobile.shader" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Leading Characters.txt" />
     <None Include="Assets\TextMesh Pro\Resources\Shaders\TMPro_Properties.cginc" />

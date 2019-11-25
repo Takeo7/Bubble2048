@@ -62,6 +62,25 @@ public class BubbleController : MonoBehaviour
     [SerializeField]
     GameObject perfectText;
 
+    [Space]
+    [Space]
+
+    [Header("SpotGrid")]
+    [SerializeField]
+    GameObject spotGridPrefab;
+    [SerializeField]
+    GameObject gridSpots;
+    bool isGridLeft = true;
+    bool isFusion = true;
+    int bounces = 0;
+
+    [Space]
+    [Space]
+
+    [Header("Game Over")]
+    [SerializeField]
+    GameObject GameOverText;
+
     //Fusion Bubbles List
     List<BubbleScript> bubblesToFusion = new List<BubbleScript>();
     int listCounter = 0;
@@ -69,7 +88,7 @@ public class BubbleController : MonoBehaviour
     //Global Bubbles List
     List<BubbleScript> allBubbles = new List<BubbleScript>();
 
-    float circleCastRad = 0.25f;
+    float circleCastRad = 0.121f;
 
 
 
@@ -119,6 +138,8 @@ public class BubbleController : MonoBehaviour
                     #region if hits first a wall
                     if (hit.collider.CompareTag("Wall-Left") || hit.collider.CompareTag("Wall-Right"))
                     {
+                        bounces = 1;
+
                         #region Second CircleCast (hit2)
                         RaycastHit2D hit2;
                         hit2 = Physics2D.CircleCast(hitResult, circleCastRad, Vector3.Reflect(dir, hit.normal), 1000f, raycastHitsLayer);
@@ -187,7 +208,6 @@ public class BubbleController : MonoBehaviour
                                 }
                                 
                                 spotRaycsted.transform.GetChild(0).gameObject.SetActive(true);
-                                Debug.Log("Reflect " + spotRaycsted,spotRaycsted.gameObject);
                                 if (spotRaycsted.CompareTag("Spot"))
                                 {
                                     spotRaycsted.transform.GetChild(0).GetComponent<SpriteRenderer>().color = tempLaunch.GetComponent<SpriteRenderer>().color;
@@ -207,10 +227,9 @@ public class BubbleController : MonoBehaviour
                                     {
                                         hitResult = hit.point + new Vector2(-0.3f, 0);
                                     }
-                                    r = Physics2D.Raycast(hitResult, hit.normal, 10f, spotLayer);
+                                    r = Physics2D.CircleCast(hitResult, circleCastRad/2,hit.normal,10f,spotLayer);
                                     spotRaycsted = r.collider;
-                                    //Debug.DrawRay(hitResult, hit.normal,Color.blue,2f);
-                                    Debug.Log(spotRaycsted);
+                                    Debug.DrawRay(hitResult+new Vector2(0,-0.6f), hit.normal*10f,Color.blue,2f);
                                     spotRaycsted.transform.GetChild(0).gameObject.SetActive(true);
                                     spotRaycsted.transform.GetChild(0).GetComponent<SpriteRenderer>().color = tempLaunch.GetComponent<SpriteRenderer>().color;
                                     tempLaunch.GetComponent<BubbleScript>().SetSpot(spotRaycsted.transform);
@@ -225,6 +244,8 @@ public class BubbleController : MonoBehaviour
                         #region If hits second a Wall
                         else
                         {
+                            bounces = 2;
+
                             #region Third Circlecast (hit3)                    
                             RaycastHit2D hit3;
                             hit3 = Physics2D.CircleCast(hitResult2, circleCastRad, Vector3.Reflect(Vector3.Reflect(dir, hit.normal), hit2.normal), 1000f, raycastHitsLayer);
@@ -290,7 +311,6 @@ public class BubbleController : MonoBehaviour
 
                                     //spotRaycsted.GetComponent<SpriteRenderer>().enabled = true;
                                     spotRaycsted.transform.GetChild(0).gameObject.SetActive(true);
-                                    Debug.Log("Reflect " + spotRaycsted, spotRaycsted.gameObject);
                                     if (spotRaycsted.CompareTag("Spot"))
                                     {
                                         spotRaycsted.transform.GetChild(0).GetComponent<SpriteRenderer>().color = tempLaunch.GetComponent<SpriteRenderer>().color;
@@ -327,7 +347,9 @@ public class BubbleController : MonoBehaviour
                     #endregion
                     #region If Raycast Hits First Ceiling or Other Bubble
                     else if (hit.collider.CompareTag("Ceiling") || hit.collider.CompareTag("Bubble"))
-                    {                       
+                    {
+                        bounces = 0;
+
                         line.SetPosition(1, hit.point);
                         line.SetPosition(2, hit.point);
                         line.SetPosition(3, hit.point);
@@ -370,7 +392,6 @@ public class BubbleController : MonoBehaviour
                             spotRaycsted = currentSpot;
                             //spotRaycsted.GetComponent<SpriteRenderer>().enabled = true;
                             spotRaycsted.transform.GetChild(0).gameObject.SetActive(true);
-                            Debug.Log("Direct " + spotRaycsted, spotRaycsted.gameObject);
                             if (spotRaycsted.CompareTag("Spot"))
                             {
                                 spotRaycsted.transform.GetChild(0).GetComponent<SpriteRenderer>().color = tempLaunch.GetComponent<SpriteRenderer>().color;
@@ -397,6 +418,14 @@ public class BubbleController : MonoBehaviour
                 dir = dir.normalized;
                 tempLaunch.GetComponent<Rigidbody2D>().AddForce(dir * force, ForceMode2D.Impulse);
                 tempLaunch.layer = 0;
+                if (bounces == 0)
+                {
+                    tempLaunch.GetComponent<Collider2D>().isTrigger = true;
+                }
+                else
+                {
+                    tempLaunch.GetComponent<BubbleScript>().bounces = bounces;
+                }
                 canShoot = false;
                 line.SetPosition(0, Vector3.zero);
                 line.SetPosition(1, Vector3.zero);
@@ -422,6 +451,11 @@ public class BubbleController : MonoBehaviour
 
     public void NewBubble()
     {
+        if (isFusion)
+        {
+            StartNewLine();
+            isFusion = false;
+        } 
         bubblesToFusion.Clear();
         listCounter = 0;
         tempLaunch = Instantiate(bubblePrefab, launchPosition.position, Quaternion.identity);
@@ -502,6 +536,7 @@ public class BubbleController : MonoBehaviour
 
     void FusionBubbles()
     {
+        isFusion = true;
         int length = bubblesToFusion.Count - 1;
         for (int i = 0; i < length; i++)
         {
@@ -576,6 +611,58 @@ public class BubbleController : MonoBehaviour
             }
         }
 
+    }
+
+    #endregion
+
+    #region NewLineSpots
+
+    void StartNewLine()
+    {
+        DownLines();
+    }
+
+    void DownLines()
+    {
+        gridSpots.transform.position -= new Vector3(0, 0.6f);
+        NewLineSpots();
+    }
+
+    void NewLineSpots()
+    {
+        GameObject temp;
+        if (isGridLeft)
+        {
+            temp = Instantiate(spotGridPrefab, new Vector3(0.325f, -0.97f), Quaternion.identity);
+            isGridLeft = false;
+        }
+        else
+        {
+            temp = Instantiate(spotGridPrefab, new Vector3(0, -0.97f), Quaternion.identity);
+            isGridLeft = true;
+        }
+        
+        temp.transform.SetParent(gridSpots.transform);
+        
+        int length = temp.transform.childCount;
+        for (int i = 0; i < length; i++)
+        {
+            GameObject tempBubble = Instantiate(bubblePrefab, temp.transform.GetChild(i).position, Quaternion.identity);
+            tempBubble.GetComponent<BubbleScript>().SetBubbleInNewLine(temp.transform.GetChild(i));
+            int rn = RandomNumber();
+            tempBubble.GetComponent<BubbleScript>().SetStats(rn, colors[rn - 1]);
+        }
+    }
+
+
+    #endregion
+
+    #region Game Over
+
+    public void GameOver()
+    {
+        canShoot = false;
+        GameOverText.SetActive(true);
     }
 
     #endregion
